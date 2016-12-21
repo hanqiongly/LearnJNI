@@ -1,0 +1,67 @@
+This file describes how to build jni and use jni .
+Environment MacOS 
+1.write java class which declares native methods . AS :
+   com.jack.jni.MacJni.java
+//**********************************************************
+   package com.jack.jni;
+   public class MacJni {
+   public native void sayHello();
+   public native int add(int a,int b);
+   public native int div(int a,int b);
+   
+   static {
+	   System.loadLibrary("macjni");
+   }
+      
+   public static void main(String[] argv) {
+	   MacJni macJni = new MacJni();
+	   macJni.sayHello();
+	   macJni.add(3, 4);
+	   macJni.div(10, 2);
+   }
+}
+//******************************************************************
+
+2.Generate .class file , and then copy the .class file into jni folder in which has the same package declared in the java class 
+    :javac ../com/jack/jni/MacJni.java
+    :cp -r ../com .
+    :rm com/jack/jni/MacJni.java
+  Now the .class file has been copied into current folder and in the same package location .(Only .class file we need )
+
+3.Generate JNI_H file :with command javah :
+   :javah -classpath ~/Java_Application/LearnJNI/src/jni com.jack.jni.MacJni
+   
+   Then we have gotten the JNI_H file , could be used as the head file for the c source file ,And this head file's name is well-formed:
+       com_jack_jni_MacJni.h
+       
+4. create c source file and define the function generated in  com_jack_jni_MacJni.h
+   as MacJni.c
+   Then we create the .o file :
+   :gcc -o MacJni -I$JNI_H -I$JNI_MD_H -c MacJni.c
+   
+   Here :JNI_H is the system path which contains the jni.h file , JNI_MD_H is the system path which contains the jni_md.h file , with the 
+   two path , gcc will find the needed files while compile the c source file .
+   Generally , jni.h and jni_md.h exist in the JAVA_HOME location (Java has been installed ),in my computer , it indicates :
+       $JNI_H :/Library/Java/JavaVirtualMachines/jdk1.8.0_40.jdk/Contents/Home/include
+       $JNI_MD_H :/Library/Java/JavaVirtualMachines/jdk1.8.0_40.jdk/Contents/Home/include/darwin
+       
+5. create dynamic library with the .o file 
+   :gcc -dynamiclib -o libmacjni.jnilib MacJni
+   
+   Then we can get the dynamic lib can be used directly by java :
+              libmacjni.jnilib
+   but before we can use the lib , we need place it to the folder can be find by Java , Or can be find by Eclipse .
+   Then we move it into the $CLASSPATH which contains the path initialized in eclipse .
+   :mv libmacjni.jnilib $CLASSPATH
+   Here $CLASSPATH :~/Library/Java/Extensions
+   Why this location ? Because Eclipse will find dynamic libs in some ensured path , among the directors , ~/Library/Java/Extensions is one .
+   
+   Tips : If you don't know the "java.library.path" current java environment used , then use the java code and run it bellow , it will tell you .
+   
+       System.out.println(System.getProperty("java.library.path"));
+       
+6.In the eclipse , find the class MacJni.java , right click , choose "run as java application"
+  
+   
+    
+   
